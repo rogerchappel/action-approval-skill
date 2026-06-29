@@ -1,0 +1,15 @@
+{
+  "title": "Update CRM renewal status",
+  "system": "CRM",
+  "action": "update ACME renewal stage to negotiation",
+  "sideEffects": [
+    "customer record update"
+  ],
+  "sensitiveFields": [
+    "customer contact email"
+  ],
+  "evidence": [
+    "meeting-notes/2026-06-29.md"
+  ],
+  "rollback": "Restore previous stage from audit history."
+}
