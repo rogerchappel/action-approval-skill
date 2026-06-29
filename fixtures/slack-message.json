@@ -1,0 +1,15 @@
+{
+  "title": "Send launch note to partner channel",
+  "system": "Slack",
+  "action": "send a message to #partner-launch with approved launch copy",
+  "sideEffects": [
+    "message visible to external partners"
+  ],
+  "sensitiveFields": [
+    "partner email"
+  ],
+  "evidence": [
+    "docs/launch.md"
+  ],
+  "rollback": "Delete message and post correction in thread."
+}
