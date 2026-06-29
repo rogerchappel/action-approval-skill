@@ -1,0 +1,12 @@
+{
+  "title": "Open GitHub follow-up issue",
+  "system": "GitHub",
+  "action": "create issue in public repo with reproduction notes",
+  "sideEffects": [
+    "public issue creation"
+  ],
+  "evidence": [
+    "test/output.log"
+  ],
+  "rollback": "Close issue with superseded note."
+}
