@@ -1,0 +1,13 @@
+{
+  "title": "Push release branch",
+  "system": "GitHub",
+  "action": "push release-candidate branch to public repository",
+  "sideEffects": [
+    "repository push"
+  ],
+  "evidence": [
+    "npm test",
+    "npm run build"
+  ],
+  "rollback": "Delete remote branch if incorrect."
+}
