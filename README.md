@@ -31,3 +31,18 @@ This package never performs external actions, stores credentials, or calls live 
 ## Limitations
 
 V1 uses deterministic keyword classification. It is intended for structured proposals and fixture-backed dry runs, not full policy enforcement or legal approval.
+
+## Verification
+
+```bash
+npm run check
+npm test
+npm run smoke
+npm run package:smoke
+npm run release:check
+```
+
+`release:check` runs TypeScript validation, fixture-backed tests, the maintained
+approval-packet smoke command, and package contents verification.
+`package:smoke` builds the CLI, verifies the published bin target, support docs,
+skill file, fixtures, and package allowlist, then runs `npm pack --dry-run`.
