@@ -4,6 +4,15 @@
   "description": "Local dry-run approval packet generator for agent side-effect plans.",
   "type": "module",
   "license": "MIT",
+  "author": "Roger Chappel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerchappel/action-approval-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rogerchappel/action-approval-skill/issues"
+  },
+  "homepage": "https://github.com/rogerchappel/action-approval-skill#readme",
   "bin": {
     "action-approval-skill": "dist/cli.js"
   },
@@ -15,8 +24,15 @@
     "SKILL.md",
     "docs",
     "fixtures",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/node": "^26.0.1",
     "typescript": "^5.5.4"
@@ -26,6 +42,7 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.js",
     "smoke": "npm run build && node dist/cli.js plan fixtures/slack-message.json --format markdown",
-    "package:smoke": "npm pack --dry-run"
+    "package:smoke": "npm run build && node scripts/package-smoke.mjs",
+    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke"
   }
 }
