@@ -15,6 +15,7 @@ const required = [
   'package/CONTRIBUTING.md',
   'package/fixtures/slack-message.json',
   'package/fixtures/repository-push.json',
+  'package/fixtures/tweetclaw-reply.json',
   'package/docs/VERIFICATION.md'
 ];
 
