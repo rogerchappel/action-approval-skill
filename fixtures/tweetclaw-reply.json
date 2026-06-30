@@ -1,0 +1,19 @@
+{
+  "title": "Publish reviewed TweetClaw reply",
+  "system": "TweetClaw OpenClaw plugin",
+  "action": "post a reviewed reply to an X/Twitter conversation",
+  "sideEffects": [
+    "public reply posted from an authenticated social account",
+    "external audience can view and share the reply"
+  ],
+  "sensitiveFields": [
+    "X account handle",
+    "draft reply text"
+  ],
+  "evidence": [
+    "target tweet URL confirmed",
+    "draft reply reviewed against brand voice"
+  ],
+  "rollback": "Delete the reply or post a correction after owner approval.",
+  "approval": "APPROVE TWEETCLAW REPLY"
+}

@@ -9,6 +9,7 @@ npm install
 npm run build
 node dist/cli.js plan fixtures/slack-message.json --format markdown
 node dist/cli.js plan fixtures/repository-push.json --format json
+node dist/cli.js plan fixtures/tweetclaw-reply.json --format markdown
 ```
 
 ## CLI
@@ -37,6 +38,10 @@ The gate type-checks the TypeScript sources, runs fixture-backed tests, exercise
 ## Safety Notes
 
 This package never performs external actions, stores credentials, or calls live APIs. Treat generated packets as approval evidence for a separate executor, not as approval by themselves. Credentials, customer details, contact data, and private repository information should be redacted before sharing packets outside the trusted workspace.
+
+The `fixtures/tweetclaw-reply.json` example shows how a public social reply can
+carry explicit evidence, rollback notes, and a dedicated approval phrase before
+another tool performs the action.
 
 ## Limitations
 
