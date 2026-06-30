@@ -24,6 +24,16 @@ const packet = createApprovalPacket({ action: 'create GitHub issue', evidence: [
 console.log(packetToMarkdown(packet));
 ```
 
+## Verification
+
+Run the release gate before publishing or opening a release PR:
+
+```bash
+npm run release:check
+```
+
+The gate type-checks the TypeScript sources, runs fixture-backed tests, exercises the CLI smoke path, and verifies the npm tarball includes the CLI, library output, skill file, fixtures, docs, license, changelog, and security policy.
+
 ## Safety Notes
 
 This package never performs external actions, stores credentials, or calls live APIs. Treat generated packets as approval evidence for a separate executor, not as approval by themselves. Credentials, customer details, contact data, and private repository information should be redacted before sharing packets outside the trusted workspace.
