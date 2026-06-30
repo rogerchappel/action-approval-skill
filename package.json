@@ -4,6 +4,7 @@
   "description": "Local dry-run approval packet generator for agent side-effect plans.",
   "type": "module",
   "license": "MIT",
+  "author": "Roger Chappel",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rogerchappel/action-approval-skill.git"
@@ -29,6 +30,9 @@
     "CHANGELOG.md",
     "CONTRIBUTING.md"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/node": "^26.0.1",
     "typescript": "^5.5.4"

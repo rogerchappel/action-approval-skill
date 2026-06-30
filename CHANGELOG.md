@@ -2,5 +2,8 @@
 
 ## 0.1.0
 
-- Initial release-candidate surface for the local approval packet CLI and library.
-- Includes fixture-backed tests, a CLI smoke path, and npm package contents checks.
+- Initial release candidate for the local approval packet CLI and skill.
+- Includes fixture-backed dry-run packet generation for Slack, CRM, GitHub, and
+  repository-push proposal shapes.
+- Adds release-readiness checks for type checking, tests, fixture smoke, and
+  dry-run package contents review.
