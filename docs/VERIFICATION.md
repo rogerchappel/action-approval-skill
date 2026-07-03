@@ -15,3 +15,6 @@ Smoke output confirmed Markdown approval packet generation for fixtures/slack-me
 `release:check` is the broadest maintained gate. It runs type checking,
 fixture-backed tests, approval-packet smoke coverage, and package contents
 verification.
+
+For future release PRs, record the `npm run release:check` output first and add
+individual command output only when it helps explain a failure or reviewer risk.

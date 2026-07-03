@@ -40,6 +40,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.js",
     "smoke": "npm run build && node dist/cli.js plan fixtures/slack-message.json --format markdown",
     "package:smoke": "npm run build && node scripts/package-smoke.mjs",

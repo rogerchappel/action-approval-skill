@@ -25,6 +25,31 @@ const packet = createApprovalPacket({ action: 'create GitHub issue', evidence: [
 console.log(packetToMarkdown(packet));
 ```
 
+## Safety Notes
+
+This package never performs external actions, stores credentials, or calls live APIs. Treat generated packets as approval evidence for a separate executor, not as approval by themselves. Credentials, customer details, contact data, and private repository information should be redacted before sharing packets outside the trusted workspace.
+
+The `fixtures/tweetclaw-reply.json` example shows how a public social reply can
+carry explicit evidence, rollback notes, and a dedicated approval phrase before
+another tool performs the action.
+
+
+## Verification
+
+Run the local quality gates before opening a pull request:
+
+```sh
+npm run lint
+npm test
+npm run smoke
+```
+
+`npm run lint` is an alias for the repository static check so contributors can use the common npm workflow without guessing the project-specific command.
+
+## Limitations
+
+V1 uses deterministic keyword classification. It is intended for structured proposals and fixture-backed dry runs, not full policy enforcement or legal approval.
+
 ## Verification
 
 Run the release gate before publishing or opening a release PR:
@@ -35,29 +60,14 @@ npm run release:check
 
 The gate type-checks the TypeScript sources, runs fixture-backed tests, exercises the CLI smoke path, and verifies the npm tarball includes the CLI, library output, skill file, fixtures, docs, license, changelog, and security policy.
 
-## Safety Notes
-
-This package never performs external actions, stores credentials, or calls live APIs. Treat generated packets as approval evidence for a separate executor, not as approval by themselves. Credentials, customer details, contact data, and private repository information should be redacted before sharing packets outside the trusted workspace.
-
-The `fixtures/tweetclaw-reply.json` example shows how a public social reply can
-carry explicit evidence, rollback notes, and a dedicated approval phrase before
-another tool performs the action.
-
-## Limitations
-
-V1 uses deterministic keyword classification. It is intended for structured proposals and fixture-backed dry runs, not full policy enforcement or legal approval.
-
-## Verification
+Use the individual verification commands when narrowing a release-gate failure:
 
 ```bash
 npm run check
 npm test
 npm run smoke
 npm run package:smoke
-npm run release:check
 ```
 
-`release:check` runs TypeScript validation, fixture-backed tests, the maintained
-approval-packet smoke command, and package contents verification.
 `package:smoke` builds the CLI, verifies the published bin target, support docs,
 skill file, fixtures, and package allowlist, then runs `npm pack --dry-run`.
