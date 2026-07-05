@@ -7,6 +7,7 @@ Local-first approval packet generator for agent actions that could affect extern
 ```bash
 npm install
 npm run build
+node dist/cli.js --help
 node dist/cli.js plan fixtures/slack-message.json --format markdown
 node dist/cli.js plan fixtures/repository-push.json --format json
 ```
