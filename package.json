@@ -45,5 +45,11 @@
     "smoke": "npm run build && node dist/cli.js plan fixtures/slack-message.json --format markdown",
     "package:smoke": "npm run build && node scripts/package-smoke.mjs",
     "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke"
-  }
+  },
+  "keywords": [
+    "agent-skill",
+    "approval",
+    "dry-run",
+    "workflow"
+  ]
 }
