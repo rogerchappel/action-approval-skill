@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -32,8 +32,13 @@ try {
     }
   }
 
-  execFileSync('node', [join(dir, 'package/dist/cli.js'), 'plan', 'fixtures/slack-message.json', '--format', 'json'], {
-    cwd: process.cwd(),
+  const packedPackage = JSON.parse(readFileSync(join(dir, 'package/package.json'), 'utf8'));
+  if (packedPackage.bin?.['action-approval-skill'] !== 'dist/cli.js') {
+    throw new Error('packed package.json missing action-approval-skill bin target');
+  }
+
+  execFileSync('node', ['dist/cli.js', 'plan', 'fixtures/slack-message.json', '--format', 'json'], {
+    cwd: join(dir, 'package'),
     stdio: 'pipe'
   });
 
