@@ -12,3 +12,8 @@ test('prints usage help', () => {
   assert.match(output, /plan <proposal>/);
   assert.match(output, /check <packet\.md>/);
 });
+
+test('prints package version metadata', () => {
+  const output = execFileSync('node', ['dist/cli.js', '--version'], { encoding: 'utf8' });
+  assert.equal(output, '0.1.0\n');
+});
