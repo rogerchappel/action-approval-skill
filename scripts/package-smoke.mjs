@@ -13,6 +13,7 @@ const required = [
   'package/SECURITY.md',
   'package/CHANGELOG.md',
   'package/CONTRIBUTING.md',
+  'package/scripts/validate-release-readiness.mjs',
   'package/fixtures/slack-message.json',
   'package/fixtures/repository-push.json',
   'package/docs/VERIFICATION.md'
