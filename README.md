@@ -8,6 +8,7 @@ Local-first approval packet generator for agent actions that could affect extern
 npm install
 npm run build
 node dist/cli.js --help
+node dist/cli.js --version
 node dist/cli.js plan fixtures/slack-message.json --format markdown
 node dist/cli.js plan fixtures/repository-push.json --format json
 ```
@@ -43,6 +44,10 @@ npm run release:check
 ```
 
 The gate type-checks the TypeScript sources, runs fixture-backed tests, exercises the CLI smoke path, and verifies the npm tarball includes the CLI, library output, skill file, fixtures, docs, license, changelog, and security policy.
+
+`npm run release:readiness` verifies package metadata, the CLI bin target,
+package export, support docs, release fixtures, CI presence, and the npm files
+allowlist before runtime checks begin.
 
 Use the individual verification commands when narrowing a release-gate failure:
 
