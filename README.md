@@ -60,3 +60,7 @@ npm run package:smoke
 
 `package:smoke` builds the CLI, verifies the published bin target, support docs,
 skill file, fixtures, and package allowlist, then runs `npm pack --dry-run`.
+
+## Release notes
+
+Before tagging a release, confirm the smoke fixture still represents the intended workflow and summarize any changed output, limitations, or operator steps in the PR.

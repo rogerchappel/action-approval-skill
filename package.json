@@ -29,7 +29,10 @@
     "LICENSE",
     "SECURITY.md",
     "CHANGELOG.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "src",
+    "scripts",
+    "test"
   ],
   "engines": {
     "node": ">=20"
