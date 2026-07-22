@@ -44,7 +44,13 @@ export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
   return { title: input.title ?? action, action, system, risk, requiresApproval: risk !== 'low' || sideEffects.length > 0, sideEffects, sensitiveFields, evidence: input.evidence ?? [], rollback: input.rollback ?? 'Not provided', checklist: ['Dry-run packet reviewed','Target system and recipient confirmed','Sensitive fields redacted or justified','Rollback owner named','Explicit approver phrase captured'], approvalPhrase: input.approval ?? 'APPROVE ACTION', warnings };
 }
 function inferSystem(text:string){ if(text.includes('slack')) return 'slack'; if(text.includes('github')) return 'github'; if(text.includes('crm')||text.includes('salesforce')) return 'crm'; return 'external system'; }
-function inferSideEffects(text:string, action:string){ return highRisk.filter(w => text.includes(w) || action.toLowerCase().includes(w)).map(w => w === 'push' ? 'repository push' : w); }
+function inferSideEffects(text:string, action:string){
+  const actionText = action.toLowerCase();
+  const inferred = highRisk.filter(w => text.includes(w) || actionText.includes(w)).map(w => w === 'push' ? 'repository push' : w);
+  if (/\bupdate\b/.test(actionText) && /\b(crm|record)\b/.test(actionText)) inferred.push('record update');
+  if (/\bcreate\b/.test(actionText) && /\b(ticket|issue)\b/.test(actionText)) inferred.push('ticket creation');
+  return inferred;
+}
 export function packetToMarkdown(packet: ApprovalPacket): string {
   return ['# Action Approval Packet', '', `- Title: ${packet.title}`, `- System: ${packet.system}`, `- Risk: ${packet.risk}`, `- Requires approval: ${packet.requiresApproval ? 'yes' : 'no'}`, '', '## Proposed Action', packet.action, '', '## Side Effects', ...(packet.sideEffects.length ? packet.sideEffects.map(s => `- ${s}`) : ['- None detected']), '', '## Sensitive Fields', ...(packet.sensitiveFields.length ? packet.sensitiveFields.map(s => `- ${s}`) : ['- None detected']), '', '## Evidence', ...(packet.evidence.length ? packet.evidence.map(e => `- ${e}`) : ['- Not provided']), '', '## Rollback', packet.rollback, '', '## Approval Checklist', ...packet.checklist.map(c => `- [ ] ${c}`), '', '## Required Approval Phrase', packet.approvalPhrase, '', '## Warnings', ...(packet.warnings.length ? packet.warnings.map(w => `- ${w}`) : ['- None'])].join('\n');
 }
