@@ -4,6 +4,19 @@ import { execFileSync } from 'node:child_process';
 import { createApprovalPacket, parseProposal, packetToMarkdown, checkPacketText } from '../dist/index.js';
 
 test('classifies side-effect proposals as approval required', () => { const packet = createApprovalPacket({ action: 'send Slack message', sideEffects: ['external message'], sensitiveFields: ['email'] }); assert.equal(packet.requiresApproval, true); assert.equal(packet.risk, 'high'); });
+test('infers external writes that require approval', () => {
+  const cases = [
+    ['update CRM record', 'record update'],
+    ['create a ticket', 'ticket creation'],
+  ];
+
+  for (const [action, sideEffect] of cases) {
+    const packet = createApprovalPacket({ action });
+    assert.equal(packet.requiresApproval, true);
+    assert.notEqual(packet.risk, 'low');
+    assert.deepEqual(packet.sideEffects, [sideEffect]);
+  }
+});
 test('parses markdown proposal fields', () => { const parsed = parseProposal('Title: Demo\nAction: create GitHub issue\nEvidence: log.txt'); assert.equal(parsed.title, 'Demo'); assert.deepEqual(parsed.evidence, ['log.txt']); });
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
 test('prints usage help', () => {
