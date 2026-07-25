@@ -5,11 +5,34 @@ export type ProposalInput = { title?: string; action?: string; system?: string; 
 export type ApprovalPacket = { title: string; action: string; system: string; risk: ApprovalRisk; requiresApproval: boolean; sideEffects: string[]; sensitiveFields: string[]; evidence: string[]; rollback: string; checklist: string[]; approvalPhrase: string; warnings: string[]; };
 const highRisk = ['send','post','push','delete','invite','charge','email','message'];
 const sensitive = ['token','secret','password','customer','email','phone','address','private','credential'];
+const stringFields = ['title', 'action', 'system', 'actor', 'target', 'summary', 'rollback', 'approval'] as const;
+const stringArrayFields = ['sideEffects', 'sensitiveFields', 'evidence'] as const;
+
+function validateProposal(value: unknown): ProposalInput {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('invalid proposal: expected a JSON object or structured Markdown fields');
+  }
+  const proposal = value as Record<string, unknown>;
+  for (const field of stringFields) {
+    if (proposal[field] !== undefined && typeof proposal[field] !== 'string') {
+      throw new Error(`invalid proposal: "${field}" must be a string`);
+    }
+  }
+  for (const field of stringArrayFields) {
+    const value = proposal[field];
+    if (value !== undefined && (!Array.isArray(value) || value.some(item => typeof item !== 'string'))) {
+      throw new Error(`invalid proposal: "${field}" must be an array of strings`);
+    }
+  }
+  return proposal as ProposalInput;
+}
 
 export function parseProposal(text: string): ProposalInput {
   const trimmed = text.trim();
   if (!trimmed) throw new Error('proposal is empty');
-  if (trimmed.startsWith('{')) return JSON.parse(trimmed) as ProposalInput;
+  if (/^[{[]/.test(trimmed) || /^(null|true|false|-?\d)/.test(trimmed)) {
+    return validateProposal(JSON.parse(trimmed) as unknown);
+  }
   const out: ProposalInput = {};
   for (const line of trimmed.split(/\r?\n/)) {
     const match = line.match(/^[-*# ]*([A-Za-z ]+):\s*(.+)$/);
@@ -27,7 +50,7 @@ export function parseProposal(text: string): ProposalInput {
     if (key === 'sensitivefields') out.sensitiveFields = val.split(',').map(s => s.trim()).filter(Boolean);
     if (key === 'evidence') out.evidence = val.split(',').map(s => s.trim()).filter(Boolean);
   }
-  return out;
+  return validateProposal(out);
 }
 
 export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
@@ -55,4 +78,8 @@ export function packetToMarkdown(packet: ApprovalPacket): string {
   return ['# Action Approval Packet', '', `- Title: ${packet.title}`, `- System: ${packet.system}`, `- Risk: ${packet.risk}`, `- Requires approval: ${packet.requiresApproval ? 'yes' : 'no'}`, '', '## Proposed Action', packet.action, '', '## Side Effects', ...(packet.sideEffects.length ? packet.sideEffects.map(s => `- ${s}`) : ['- None detected']), '', '## Sensitive Fields', ...(packet.sensitiveFields.length ? packet.sensitiveFields.map(s => `- ${s}`) : ['- None detected']), '', '## Evidence', ...(packet.evidence.length ? packet.evidence.map(e => `- ${e}`) : ['- Not provided']), '', '## Rollback', packet.rollback, '', '## Approval Checklist', ...packet.checklist.map(c => `- [ ] ${c}`), '', '## Required Approval Phrase', packet.approvalPhrase, '', '## Warnings', ...(packet.warnings.length ? packet.warnings.map(w => `- ${w}`) : ['- None'])].join('\n');
 }
 export function loadPacketFromFile(file: string){ return createApprovalPacket(parseProposal(readFileSync(file,'utf8'))); }
-export function checkPacketText(text: string){ const required = ['# Action Approval Packet','## Side Effects','## Rollback','## Required Approval Phrase']; return { ok: required.every(r => text.includes(r)), missing: required.filter(r => !text.includes(r)) }; }
+export function checkPacketText(text: string){
+  const required = ['# Action Approval Packet','## Side Effects','## Rollback','## Required Approval Phrase'];
+  const headings = new Set(text.split(/\r?\n/).map(line => line.trim()).filter(line => /^#{1,6}\s+\S/.test(line)));
+  return { ok: required.every(heading => headings.has(heading)), missing: required.filter(heading => !headings.has(heading)) };
+}
