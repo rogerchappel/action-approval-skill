@@ -7,5 +7,13 @@ const usage = 'Usage: action-approval-skill plan <proposal> [--format markdown|j
 if (cmd === '--help' || cmd === '-h') { console.log(usage); process.exit(0); }
 if (cmd === '--version') { const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')); console.log(pkg.version); process.exit(0); }
 if (!cmd || !file || !['plan','check'].includes(cmd)) { console.error(usage); process.exit(2); }
-if (cmd === 'plan') { const packet = loadPacketFromFile(file); console.log(format === 'json' ? JSON.stringify(packet,null,2) : packetToMarkdown(packet)); }
+if (cmd === 'plan') {
+  try {
+    const packet = loadPacketFromFile(file);
+    console.log(format === 'json' ? JSON.stringify(packet,null,2) : packetToMarkdown(packet));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : 'invalid proposal');
+    process.exit(1);
+  }
+}
 if (cmd === 'check') { const result = checkPacketText(readFileSync(file,'utf8')); console.log(JSON.stringify(result,null,2)); process.exit(result.ok ? 0 : 1); }
