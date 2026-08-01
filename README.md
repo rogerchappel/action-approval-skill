@@ -18,6 +18,11 @@ node dist/cli.js plan fixtures/repository-push.json --format json
 - `action-approval-skill plan <proposal> [--format markdown|json]` creates an approval packet.
 - `action-approval-skill check <packet.md>` verifies that a packet has the required approval sections.
 
+`--format` is available only for `plan`, must be followed by `markdown` or
+`json`, and defaults to `markdown`. Unknown options and additional positional
+arguments are rejected. File and proposal errors are printed as concise
+diagnostics to standard error, with no partial packet output.
+
 JSON proposals must be objects. Text fields such as `action` and `rollback`
 must be strings; `sideEffects`, `sensitiveFields`, and `evidence` must be
 arrays of strings. Invalid shapes exit nonzero and do not emit a packet.
