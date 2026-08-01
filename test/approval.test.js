@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApprovalPacket, parseProposal, packetToMarkdown, checkPacketText } from '../dist/index.js';
@@ -45,6 +45,50 @@ test('plan reports invalid proposals without producing a packet', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /invalid proposal/i);
   assert.equal(result.stdout, '');
+});
+test('rejects invalid plan arguments without producing a packet', () => {
+  const invalidArguments = [
+    ['plan', 'fixtures/slack-message.json', '--format', 'yaml'],
+    ['plan', 'fixtures/slack-message.json', '--format'],
+    ['plan', 'fixtures/slack-message.json', '--unknown'],
+    ['plan', 'fixtures/slack-message.json', 'stray'],
+  ];
+
+  for (const args of invalidArguments) {
+    const result = spawnSync('node', ['dist/cli.js', ...args], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0, args.join(' '));
+    assert.match(result.stderr, /Error:/);
+    assert.equal(result.stdout, '');
+  }
+});
+test('rejects invalid check arguments without producing output', () => {
+  for (const extra of ['--format', '--unknown', 'stray']) {
+    const result = spawnSync('node', ['dist/cli.js', 'check', 'fixtures/slack-message.json', extra], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Error:/);
+    assert.equal(result.stdout, '');
+  }
+});
+test('reports missing and unreadable CLI inputs without stack traces', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-unreadable-'));
+  const unreadable = join(directory, 'directory');
+  mkdirSync(unreadable);
+
+  for (const [command, file] of [['plan', join(directory, 'missing.json')], ['check', join(directory, 'missing.md')], ['plan', unreadable], ['check', unreadable]]) {
+    const result = spawnSync('node', ['dist/cli.js', command, file], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /^Error: /);
+    assert.doesNotMatch(result.stderr, /\n\s+at |node:fs/);
+    assert.equal(result.stdout, '');
+  }
+});
+test('requires a file for plan and check', () => {
+  for (const command of ['plan', 'check']) {
+    const result = spawnSync('node', ['dist/cli.js', command], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /requires a file/);
+    assert.equal(result.stdout, '');
+  }
 });
 test('prints usage help', () => {
   const output = execFileSync('node', ['dist/cli.js', '--help'], { encoding: 'utf8' });
