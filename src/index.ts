@@ -24,6 +24,9 @@ function validateProposal(value: unknown): ProposalInput {
       throw new Error(`invalid proposal: "${field}" must be an array of strings`);
     }
   }
+  if (![proposal.action, proposal.summary].some(value => typeof value === 'string' && value.trim().length > 0)) {
+    throw new Error('invalid proposal: expected a non-empty action or summary');
+  }
   return proposal as ProposalInput;
 }
 

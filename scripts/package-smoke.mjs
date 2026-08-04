@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -16,6 +16,7 @@ const required = [
   'package/scripts/validate-release-readiness.mjs',
   'package/fixtures/slack-message.json',
   'package/fixtures/repository-push.json',
+  'package/fixtures/unstructured.md',
   'package/docs/VERIFICATION.md'
 ];
 
@@ -42,6 +43,14 @@ try {
     cwd: join(dir, 'package'),
     stdio: 'pipe'
   });
+
+  const invalidProposal = spawnSync('node', ['dist/cli.js', 'plan', 'fixtures/unstructured.md', '--format', 'json'], {
+    cwd: join(dir, 'package'),
+    encoding: 'utf8'
+  });
+  if (invalidProposal.status === 0 || invalidProposal.stdout !== '' || !/action or summary/i.test(invalidProposal.stderr)) {
+    throw new Error('packed CLI accepted an unstructured Markdown proposal');
+  }
 
   console.log(`package smoke passed for ${tarball}`);
   rmSync(tarball, { force: true });

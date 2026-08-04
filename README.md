@@ -25,7 +25,10 @@ diagnostics to standard error, with no partial packet output.
 
 JSON proposals must be objects. Text fields such as `action` and `rollback`
 must be strings; `sideEffects`, `sensitiveFields`, and `evidence` must be
-arrays of strings. Invalid shapes exit nonzero and do not emit a packet.
+arrays of strings. Every JSON or Markdown proposal must provide a non-empty
+`action` or `summary`; other fields are optional. Markdown fields use
+`Field: value` lines, and prose without a recognized actionable field is
+rejected. Invalid or incomplete proposals exit nonzero and do not emit a packet.
 Packet checks require the expected standalone Markdown headings, so heading
 names mentioned inside prose or list items do not satisfy the check.
 
