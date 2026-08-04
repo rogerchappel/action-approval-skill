@@ -29,6 +29,7 @@ for (const file of [
   'docs/RELEASE_CANDIDATE.md',
   'fixtures/slack-message.json',
   'fixtures/repository-push.json',
+  'fixtures/unstructured.md',
   '.github/workflows/ci.yml'
 ]) {
   requireField(existsSync(file), `${file} must be present for release review`);
