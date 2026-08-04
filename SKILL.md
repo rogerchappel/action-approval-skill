@@ -4,7 +4,8 @@ Use this skill when an agent proposes an external side effect such as sending a 
 
 ## Inputs
 
-- JSON or Markdown proposal with action, system, side effects, sensitive fields, evidence, rollback, and optional approval phrase.
+- JSON object or `Field: value` Markdown proposal with a non-empty action or summary. System, side effects, sensitive fields, evidence, rollback, and approval phrase are optional.
+- Unstructured prose and proposals containing only optional fields are invalid and must not produce a packet.
 - Local files only. Do not fetch credentials or call external APIs.
 
 ## Side-Effect Boundary
