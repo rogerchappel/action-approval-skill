@@ -21,6 +21,21 @@ test('infers external writes that require approval', () => {
   }
 });
 test('parses markdown proposal fields', () => { const parsed = parseProposal('Title: Demo\nAction: create GitHub issue\nEvidence: log.txt'); assert.equal(parsed.title, 'Demo'); assert.deepEqual(parsed.evidence, ['log.txt']); });
+test('requires a non-empty action or summary in proposals', () => {
+  for (const proposal of [
+    'this is not a structured proposal',
+    'Title: Notes only\nEvidence: log.txt',
+    'Action:   ',
+    '{}',
+    '{"title":"Notes only"}',
+    '{"action":"   "}',
+  ]) {
+    assert.throws(() => parseProposal(proposal), /action or summary/i, proposal);
+  }
+
+  assert.equal(parseProposal('Summary: document the release').summary, 'document the release');
+  assert.equal(parseProposal('{"summary":"document the release"}').summary, 'document the release');
+});
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
 test('rejects malformed proposal shapes and field types', () => {
   for (const proposal of ['null', '[]', '{"action":42}', '{"sideEffects":"send"}', '{"evidence":[1]}']) {
@@ -44,6 +59,12 @@ test('plan reports invalid proposals without producing a packet', () => {
   const result = spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /invalid proposal/i);
+  assert.equal(result.stdout, '');
+});
+test('plan rejects unstructured Markdown without producing a packet', () => {
+  const result = spawnSync('node', ['dist/cli.js', 'plan', 'fixtures/unstructured.md', '--format', 'json'], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /action or summary/i);
   assert.equal(result.stdout, '');
 });
 test('rejects invalid plan arguments without producing a packet', () => {
