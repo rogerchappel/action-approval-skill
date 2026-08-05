@@ -5,6 +5,7 @@
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Reject invalid proposal shapes and require standalone packet section headings.
 - Reject unstructured or incomplete proposals that lack a non-empty action or summary.
+- Reject approval packets whose required semantic sections have no content.
 ## 0.1.0
 
 - Initial release candidate for the local approval packet CLI and skill.
