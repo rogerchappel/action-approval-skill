@@ -29,8 +29,10 @@ arrays of strings. Every JSON or Markdown proposal must provide a non-empty
 `action` or `summary`; other fields are optional. Markdown fields use
 `Field: value` lines, and prose without a recognized actionable field is
 rejected. Invalid or incomplete proposals exit nonzero and do not emit a packet.
-Packet checks require the expected standalone Markdown headings, so heading
-names mentioned inside prose or list items do not satisfy the check.
+Packet checks require the expected standalone Markdown headings and non-empty
+content under Proposed Action, Side Effects, Rollback, and Required Approval
+Phrase. Heading-only or whitespace-only sections fail with a nonzero exit and
+a JSON result that distinguishes `missing` headings from `empty` sections.
 
 ## Library
 
