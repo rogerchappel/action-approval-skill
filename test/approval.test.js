@@ -37,6 +37,31 @@ test('requires a non-empty action or summary in proposals', () => {
   assert.equal(parseProposal('{"summary":"document the release"}').summary, 'document the release');
 });
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
+test('requires content in every semantic packet section', () => {
+  const requiredSections = ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+
+  for (const heading of requiredSections) {
+    for (const body of ['', '   \n\t']) {
+      const emptyPacket = valid.replace(new RegExp(`(${heading.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')})\\n[^#]+`), `$1\n${body}\n`);
+      const result = checkPacketText(emptyPacket);
+      assert.equal(result.ok, false, `${heading} with ${JSON.stringify(body)}`);
+      assert.deepEqual(result.empty, [heading]);
+    }
+  }
+});
+test('check CLI rejects heading-only packets with machine-reviewable output', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-empty-'));
+  const packet = join(directory, 'packet.md');
+  writeFileSync(packet, '# Action Approval Packet\n## Proposed Action\n## Side Effects\n## Rollback\n## Required Approval Phrase\n');
+  const result = spawnSync('node', ['dist/cli.js', 'check', packet], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.stderr, '');
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.ok, false);
+  assert.deepEqual(output.missing, []);
+  assert.deepEqual(output.empty, ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
+});
 test('rejects malformed proposal shapes and field types', () => {
   for (const proposal of ['null', '[]', '{"action":42}', '{"sideEffects":"send"}', '{"evidence":[1]}']) {
     assert.throws(() => parseProposal(proposal), /proposal/i);
@@ -50,7 +75,8 @@ test('requires standalone packet headings', () => {
   ].join('\n');
   const result = checkPacketText(forged);
   assert.equal(result.ok, false);
-  assert.deepEqual(result.missing, ['## Rollback', '## Required Approval Phrase']);
+  assert.deepEqual(result.missing, ['## Proposed Action', '## Rollback', '## Required Approval Phrase']);
+  assert.deepEqual(result.empty, []);
 });
 test('plan reports invalid proposals without producing a packet', () => {
   const directory = mkdtempSync(join(tmpdir(), 'action-approval-'));
