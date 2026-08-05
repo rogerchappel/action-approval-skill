@@ -82,7 +82,22 @@ export function packetToMarkdown(packet: ApprovalPacket): string {
 }
 export function loadPacketFromFile(file: string){ return createApprovalPacket(parseProposal(readFileSync(file,'utf8'))); }
 export function checkPacketText(text: string){
-  const required = ['# Action Approval Packet','## Side Effects','## Rollback','## Required Approval Phrase'];
-  const headings = new Set(text.split(/\r?\n/).map(line => line.trim()).filter(line => /^#{1,6}\s+\S/.test(line)));
-  return { ok: required.every(heading => headings.has(heading)), missing: required.filter(heading => !headings.has(heading)) };
+  const packetHeading = '# Action Approval Packet';
+  const requiredSections = ['## Proposed Action','## Side Effects','## Rollback','## Required Approval Phrase'];
+  const lines = text.split(/\r?\n/);
+  const headings = new Map<string, number>();
+  lines.forEach((line, index) => {
+    const heading = line.trim();
+    if (/^#{1,6}\s+\S/.test(heading) && !headings.has(heading)) headings.set(heading, index);
+  });
+  const required = [packetHeading, ...requiredSections];
+  const missing = required.filter(heading => !headings.has(heading));
+  const empty = requiredSections.filter(heading => {
+    const start = headings.get(heading);
+    if (start === undefined) return false;
+    const nextHeading = lines.findIndex((line, index) => index > start && /^#{1,6}\s+\S/.test(line.trim()));
+    const end = nextHeading === -1 ? lines.length : nextHeading;
+    return !lines.slice(start + 1, end).some(line => line.trim().length > 0);
+  });
+  return { ok: missing.length === 0 && empty.length === 0, missing, empty };
 }
