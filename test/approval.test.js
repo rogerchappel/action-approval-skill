@@ -61,6 +61,13 @@ test('requires the packet title before packet content', () => {
     assert.equal(result.title.position, 'misplaced');
   }
 });
+test('rejects duplicate required headings as ambiguous packet structure', () => {
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+  const duplicate = valid.replace('## Rollback\n', '## Rollback\nNot provided\n## Rollback\n');
+  const result = checkPacketText(duplicate);
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.duplicates, ['## Rollback']);
+});
 test('rejects comment-only semantic packet sections', () => {
   const requiredSections = ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
   const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
