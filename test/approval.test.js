@@ -37,6 +37,40 @@ test('requires a non-empty action or summary in proposals', () => {
   assert.equal(parseProposal('{"summary":"document the release"}').summary, 'document the release');
 });
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
+test('requires the packet title and semantic sections in generated order', () => {
+  const reordered = [
+    '# Action Approval Packet',
+    '## Side Effects',
+    '- None detected',
+    '## Proposed Action',
+    'document only',
+    '## Rollback',
+    'Not provided',
+    '## Required Approval Phrase',
+    'APPROVE ACTION',
+  ].join('\n');
+  const result = checkPacketText(reordered);
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.outOfOrder, ['## Proposed Action', '## Side Effects']);
+});
+test('requires the packet title before packet content', () => {
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+  for (const malformed of [`preamble\n${valid}`, `## Rollback\nNot provided\n${valid}`]) {
+    const result = checkPacketText(malformed);
+    assert.equal(result.ok, false);
+    assert.equal(result.title.position, 'misplaced');
+  }
+});
+test('rejects comment-only semantic packet sections', () => {
+  const requiredSections = ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+  for (const heading of requiredSections) {
+    const commentOnly = valid.replace(new RegExp(`(${heading.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')})\\n[^#]+`), '$1\n<!-- intentionally absent -->\n');
+    const result = checkPacketText(commentOnly);
+    assert.equal(result.ok, false, heading);
+    assert.deepEqual(result.empty, [heading]);
+  }
+});
 test('requires content in every semantic packet section', () => {
   const requiredSections = ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
   const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
@@ -61,6 +95,16 @@ test('check CLI rejects heading-only packets with machine-reviewable output', ()
   assert.equal(output.ok, false);
   assert.deepEqual(output.missing, []);
   assert.deepEqual(output.empty, ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
+});
+test('check CLI rejects reordered packets with machine-reviewable output', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-order-'));
+  const packet = join(directory, 'packet.md');
+  writeFileSync(packet, '# Action Approval Packet\n## Side Effects\n- send\n## Proposed Action\nsend message\n## Rollback\nretract\n## Required Approval Phrase\nAPPROVE ACTION\n');
+  const result = spawnSync('node', ['dist/cli.js', 'check', packet], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.ok, false);
+  assert.deepEqual(output.outOfOrder, ['## Proposed Action', '## Side Effects']);
 });
 test('rejects malformed proposal shapes and field types', () => {
   for (const proposal of ['null', '[]', '{"action":42}', '{"sideEffects":"send"}', '{"evidence":[1]}']) {
