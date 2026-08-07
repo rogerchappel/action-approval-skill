@@ -84,20 +84,39 @@ export function loadPacketFromFile(file: string){ return createApprovalPacket(pa
 export function checkPacketText(text: string){
   const packetHeading = '# Action Approval Packet';
   const requiredSections = ['## Proposed Action','## Side Effects','## Rollback','## Required Approval Phrase'];
-  const lines = text.split(/\r?\n/);
-  const headings = new Map<string, number>();
+  const withoutComments = text.replace(/<!--[\s\S]*?-->/g, comment => comment.replace(/[^\r\n]/g, ''));
+  const lines = withoutComments.split(/\r?\n/);
+  const headings = new Map<string, number[]>();
   lines.forEach((line, index) => {
     const heading = line.trim();
-    if (/^#{1,6}\s+\S/.test(heading) && !headings.has(heading)) headings.set(heading, index);
+    if (/^#{1,6}\s+\S/.test(heading)) headings.set(heading, [...(headings.get(heading) ?? []), index]);
   });
   const required = [packetHeading, ...requiredSections];
   const missing = required.filter(heading => !headings.has(heading));
+  const duplicates = required.filter(heading => (headings.get(heading)?.length ?? 0) > 1);
+  const firstContent = lines.findIndex(line => line.trim().length > 0);
+  const titleIndex = headings.get(packetHeading)?.[0];
+  const title = {
+    position: titleIndex === undefined ? 'missing' : titleIndex === firstContent ? 'valid' : 'misplaced',
+    count: headings.get(packetHeading)?.length ?? 0,
+  };
+  const presentSections = requiredSections.filter(heading => headings.has(heading));
+  const outOfOrder = presentSections.filter((heading, index) => presentSections.some((other, otherIndex) =>
+    (index < otherIndex) !== ((headings.get(heading)?.[0] ?? 0) < (headings.get(other)?.[0] ?? 0))
+  ));
   const empty = requiredSections.filter(heading => {
-    const start = headings.get(heading);
+    const start = headings.get(heading)?.[0];
     if (start === undefined) return false;
     const nextHeading = lines.findIndex((line, index) => index > start && /^#{1,6}\s+\S/.test(line.trim()));
     const end = nextHeading === -1 ? lines.length : nextHeading;
     return !lines.slice(start + 1, end).some(line => line.trim().length > 0);
   });
-  return { ok: missing.length === 0 && empty.length === 0, missing, empty };
+  return {
+    ok: missing.length === 0 && duplicates.length === 0 && title.position === 'valid' && outOfOrder.length === 0 && empty.length === 0,
+    missing,
+    duplicates,
+    outOfOrder,
+    empty,
+    title,
+  };
 }
