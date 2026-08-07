@@ -29,10 +29,12 @@ arrays of strings. Every JSON or Markdown proposal must provide a non-empty
 `action` or `summary`; other fields are optional. Markdown fields use
 `Field: value` lines, and prose without a recognized actionable field is
 rejected. Invalid or incomplete proposals exit nonzero and do not emit a packet.
-Packet checks require the expected standalone Markdown headings and non-empty
-content under Proposed Action, Side Effects, Rollback, and Required Approval
-Phrase. Heading-only or whitespace-only sections fail with a nonzero exit and
-a JSON result that distinguishes `missing` headings from `empty` sections.
+Packet checks require the packet title to be the first content, followed by the
+expected standalone Markdown sections in generated order. Proposed Action,
+Side Effects, Rollback, and Required Approval Phrase must contain semantic
+content; blank, whitespace-only, and HTML-comment-only bodies are rejected.
+Malformed packets exit nonzero and return JSON diagnostics for `missing`,
+`duplicates`, `outOfOrder`, `empty`, and the packet `title` position.
 
 ## Library
 

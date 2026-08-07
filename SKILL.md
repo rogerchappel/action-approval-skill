@@ -23,6 +23,11 @@ action-approval-skill plan fixtures/crm-update.json --format markdown
 action-approval-skill check approval-packet.md
 ```
 
+`check` accepts one coherent generated packet: the packet title must be first,
+required sections must be unique and in generated order, and their bodies must
+contain content other than Markdown whitespace or HTML comments. Invalid
+packets produce JSON diagnostics and a nonzero status.
+
 ## Validation
 
 Run `npm test`, `npm run check`, `npm run build`, `npm run smoke`, and `npm run package:smoke`. Confirm the packet names side effects, evidence, rollback, warnings, and the approval phrase.
