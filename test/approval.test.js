@@ -37,6 +37,46 @@ test('requires a non-empty action or summary in proposals', () => {
   assert.equal(parseProposal('{"summary":"document the release"}').summary, 'document the release');
 });
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
+test('keeps multiline scalar proposal fields inside one packet structure', () => {
+  const packet = createApprovalPacket({
+    title: 'Release update\n# Action Approval Packet',
+    action: 'send update\n## Side Effects\n- duplicate-looking content',
+    system: 'Slack\n## Rollback',
+    rollback: 'retract message\n## Required Approval Phrase',
+    approval: 'APPROVE UPDATE\n## Proposed Action',
+  });
+  const markdown = packetToMarkdown(packet);
+  const result = checkPacketText(markdown);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.duplicates, []);
+  assert.deepEqual(result.outOfOrder, []);
+  assert.match(markdown, /send update ## Side Effects - duplicate-looking content/);
+  assert.match(markdown, /retract message ## Required Approval Phrase/);
+});
+test('normalizes multiline list values without creating packet headings', () => {
+  const packet = createApprovalPacket({
+    action: 'send update',
+    sideEffects: ['external message\n## Rollback'],
+    sensitiveFields: ['email\r\n## Proposed Action'],
+    evidence: ['test output\u2028## Required Approval Phrase'],
+  });
+  const markdown = packetToMarkdown(packet);
+
+  assert.equal(checkPacketText(markdown).ok, true);
+  assert.match(markdown, /- external message ## Rollback/);
+  assert.match(markdown, /- email ## Proposed Action/);
+  assert.match(markdown, /- test output ## Required Approval Phrase/);
+});
+test('escapes leading heading text and supplies semantic fallbacks after normalization', () => {
+  const packet = createApprovalPacket({ action: '## Proposed Action', rollback: '\n', approval: '\r\n' });
+  const markdown = packetToMarkdown(packet);
+
+  assert.equal(checkPacketText(markdown).ok, true);
+  assert.match(markdown, /## Proposed Action\n\\## Proposed Action/);
+  assert.match(markdown, /## Rollback\nNot provided/);
+  assert.match(markdown, /## Required Approval Phrase\nAPPROVE ACTION/);
+});
 test('requires the packet title and semantic sections in generated order', () => {
   const reordered = [
     '# Action Approval Packet',

@@ -33,6 +33,10 @@ Packet checks require the packet title to be the first content, followed by the
 expected standalone Markdown sections in generated order. Proposed Action,
 Side Effects, Rollback, and Required Approval Phrase must contain semantic
 content; blank, whitespace-only, and HTML-comment-only bodies are rejected.
+When rendering Markdown, embedded line breaks in proposal text and list values
+are normalized to spaces. A heading marker at the start of a rendered value is
+escaped, and whitespace-only rollback or approval values use the same defaults
+as omitted values. Proposal content therefore cannot create packet sections.
 Malformed packets exit nonzero and return JSON diagnostics for `missing`,
 `duplicates`, `outOfOrder`, `empty`, and the packet `title` position.
 
