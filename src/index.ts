@@ -78,7 +78,11 @@ function inferSideEffects(text:string, action:string){
   return inferred;
 }
 export function packetToMarkdown(packet: ApprovalPacket): string {
-  return ['# Action Approval Packet', '', `- Title: ${packet.title}`, `- System: ${packet.system}`, `- Risk: ${packet.risk}`, `- Requires approval: ${packet.requiresApproval ? 'yes' : 'no'}`, '', '## Proposed Action', packet.action, '', '## Side Effects', ...(packet.sideEffects.length ? packet.sideEffects.map(s => `- ${s}`) : ['- None detected']), '', '## Sensitive Fields', ...(packet.sensitiveFields.length ? packet.sensitiveFields.map(s => `- ${s}`) : ['- None detected']), '', '## Evidence', ...(packet.evidence.length ? packet.evidence.map(e => `- ${e}`) : ['- Not provided']), '', '## Rollback', packet.rollback, '', '## Approval Checklist', ...packet.checklist.map(c => `- [ ] ${c}`), '', '## Required Approval Phrase', packet.approvalPhrase, '', '## Warnings', ...(packet.warnings.length ? packet.warnings.map(w => `- ${w}`) : ['- None'])].join('\n');
+  const inline = (value: string, fallback = '(empty)') => {
+    const normalized = value.replace(/[\r\n\u2028\u2029]+/g, ' ').trim() || fallback;
+    return normalized.replace(/^(#{1,6})(?=\s)/, '\\$1');
+  };
+  return ['# Action Approval Packet', '', `- Title: ${inline(packet.title, 'Untitled action')}`, `- System: ${inline(packet.system, 'external system')}`, `- Risk: ${packet.risk}`, `- Requires approval: ${packet.requiresApproval ? 'yes' : 'no'}`, '', '## Proposed Action', inline(packet.action, 'unspecified action'), '', '## Side Effects', ...(packet.sideEffects.length ? packet.sideEffects.map(s => `- ${inline(s)}`) : ['- None detected']), '', '## Sensitive Fields', ...(packet.sensitiveFields.length ? packet.sensitiveFields.map(s => `- ${inline(s)}`) : ['- None detected']), '', '## Evidence', ...(packet.evidence.length ? packet.evidence.map(e => `- ${inline(e)}`) : ['- Not provided']), '', '## Rollback', inline(packet.rollback, 'Not provided'), '', '## Approval Checklist', ...packet.checklist.map(c => `- [ ] ${inline(c)}`), '', '## Required Approval Phrase', inline(packet.approvalPhrase, 'APPROVE ACTION'), '', '## Warnings', ...(packet.warnings.length ? packet.warnings.map(w => `- ${inline(w)}`) : ['- None'])].join('\n');
 }
 export function loadPacketFromFile(file: string){ return createApprovalPacket(parseProposal(readFileSync(file,'utf8'))); }
 export function checkPacketText(text: string){
