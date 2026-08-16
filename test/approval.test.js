@@ -20,6 +20,41 @@ test('infers external writes that require approval', () => {
     assert.deepEqual(packet.sideEffects, [sideEffect]);
   }
 });
+test('classifies only semantically relevant proposal fields and complete action words', () => {
+  const documentation = createApprovalPacket({
+    title: 'Email postmortem for customer-impacting incident',
+    action: 'document the release notes',
+    evidence: ['postmortem.md', 'secret-scan.txt'],
+    rollback: 'revert the documentation push',
+  });
+
+  assert.deepEqual(documentation.sideEffects, []);
+  assert.deepEqual(documentation.sensitiveFields, []);
+  assert.equal(documentation.risk, 'low');
+  assert.equal(documentation.requiresApproval, false);
+
+  for (const keyword of ['send', 'post', 'push', 'delete', 'invite', 'charge', 'email', 'message']) {
+    const packet = createApprovalPacket({ action: `${keyword} the requested update` });
+    assert.deepEqual(packet.sideEffects, [keyword === 'push' ? 'repository push' : keyword]);
+    assert.equal(packet.requiresApproval, true);
+    assert.equal(packet.risk, 'high');
+  }
+
+  const substrings = createApprovalPacket({ action: 'document poster postage and messages' });
+  assert.deepEqual(substrings.sideEffects, []);
+  assert.equal(substrings.requiresApproval, false);
+});
+test('preserves explicitly supplied classification fields, including empty arrays', () => {
+  const packet = createApprovalPacket({
+    action: 'send a customer email',
+    sideEffects: [],
+    sensitiveFields: [],
+  });
+
+  assert.deepEqual(packet.sideEffects, []);
+  assert.deepEqual(packet.sensitiveFields, []);
+  assert.equal(packet.risk, 'low');
+});
 test('parses markdown proposal fields', () => { const parsed = parseProposal('Title: Demo\nAction: create GitHub issue\nEvidence: log.txt'); assert.equal(parsed.title, 'Demo'); assert.deepEqual(parsed.evidence, ['log.txt']); });
 test('requires a non-empty action or summary in proposals', () => {
   for (const proposal of [
