@@ -16,6 +16,13 @@ The skill is dry-run only. It must not send messages, update remote records, cre
 
 Require explicit human approval before any downstream executor acts. High-risk packets include sensitive fields, public communication, repository pushes, deletes, charges, or customer-impacting updates.
 
+When classification fields are omitted, deterministic inference considers only
+the proposal's action, summary, system, actor, and target. It matches action
+keywords as complete words or phrases; titles, evidence, rollback notes, and
+approval phrases are descriptive context and do not create inferred side
+effects or sensitive fields. Explicit `sideEffects` and `sensitiveFields`,
+including empty arrays, are authoritative.
+
 ## Examples
 
 ```bash
