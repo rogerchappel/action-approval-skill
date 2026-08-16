@@ -55,7 +55,13 @@ This package never performs external actions, stores credentials, or calls live 
 
 ## Limitations
 
-V1 uses deterministic keyword classification. It is intended for structured proposals and fixture-backed dry runs, not full policy enforcement or legal approval.
+V1 uses deterministic keyword classification. Inference considers the action,
+summary, system, actor, and target fields; titles, evidence, rollback notes, and
+approval phrases do not affect the inferred system, side effects, or sensitive
+fields. Action keywords such as `send`, `post`, and `push` must occur as complete
+words or phrases, while explicitly supplied `sideEffects` and `sensitiveFields`
+are preserved. The classifier is intended for structured proposals and
+fixture-backed dry runs, not full policy enforcement or legal approval.
 
 ## Verification
 

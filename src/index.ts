@@ -57,12 +57,17 @@ export function parseProposal(text: string): ProposalInput {
 }
 
 export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
-  const text = JSON.stringify(input).toLowerCase();
   const action = input.action ?? input.summary ?? 'unspecified action';
-  const system = input.system ?? inferSystem(text);
-  const sideEffects = input.sideEffects?.length ? input.sideEffects : inferSideEffects(text, action);
-  const sensitiveFields = input.sensitiveFields?.length ? input.sensitiveFields : sensitive.filter(w => text.includes(w));
-  const risk: ApprovalRisk = sideEffects.some(s => highRisk.some(w => s.toLowerCase().includes(w))) || sensitiveFields.length > 0 ? 'high' : sideEffects.length ? 'medium' : 'low';
+  const classificationText = [input.action, input.summary, input.system, input.actor, input.target]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toLowerCase();
+  const system = input.system ?? inferSystem(classificationText);
+  const sideEffects = input.sideEffects !== undefined ? input.sideEffects : inferSideEffects(action);
+  const sensitiveFields = input.sensitiveFields !== undefined
+    ? input.sensitiveFields
+    : sensitive.filter(keyword => containsKeyword(classificationText, keyword));
+  const risk: ApprovalRisk = sideEffects.some(effect => highRisk.some(keyword => containsKeyword(effect, keyword))) || sensitiveFields.length > 0 ? 'high' : sideEffects.length ? 'medium' : 'low';
   const warnings: string[] = [];
   if (!input.rollback) warnings.push('Rollback notes missing.');
   if (!input.evidence?.length) warnings.push('Evidence links missing.');
@@ -70,9 +75,13 @@ export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
   return { title: input.title ?? action, action, system, risk, requiresApproval: risk !== 'low' || sideEffects.length > 0, sideEffects, sensitiveFields, evidence: input.evidence ?? [], rollback: input.rollback ?? 'Not provided', checklist: ['Dry-run packet reviewed','Target system and recipient confirmed','Sensitive fields redacted or justified','Rollback owner named','Explicit approver phrase captured'], approvalPhrase: input.approval ?? 'APPROVE ACTION', warnings };
 }
 function inferSystem(text:string){ if(text.includes('slack')) return 'slack'; if(text.includes('github')) return 'github'; if(text.includes('crm')||text.includes('salesforce')) return 'crm'; return 'external system'; }
-function inferSideEffects(text:string, action:string){
+function containsKeyword(text: string, keyword: string) {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped.replace(/\s+/g, '\\s+')}\\b`, 'i').test(text);
+}
+function inferSideEffects(action:string){
   const actionText = action.toLowerCase();
-  const inferred = highRisk.filter(w => text.includes(w) || actionText.includes(w)).map(w => w === 'push' ? 'repository push' : w);
+  const inferred = highRisk.filter(keyword => containsKeyword(actionText, keyword)).map(keyword => keyword === 'push' ? 'repository push' : keyword);
   if (/\bupdate\b/.test(actionText) && /\b(crm|record)\b/.test(actionText)) inferred.push('record update');
   if (/\bcreate\b/.test(actionText) && /\b(ticket|issue)\b/.test(actionText)) inferred.push('ticket creation');
   return inferred;
