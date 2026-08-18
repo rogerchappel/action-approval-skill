@@ -166,6 +166,27 @@ test('requires content in every semantic packet section', () => {
     }
   }
 });
+test('rejects Markdown-marker-only semantic packet sections', () => {
+  const requiredSections = ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
+  const markerBodies = ['-', '*', '+', '1.', '1)', '>', '> -', '- [ ]', '- [x]', '```', '---'];
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+
+  for (const heading of requiredSections) {
+    for (const body of markerBodies) {
+      const markerOnly = valid.replace(new RegExp(`(${heading.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')})\\n[^#]+`), `$1\n${body}\n`);
+      const result = checkPacketText(markerOnly);
+      assert.equal(result.ok, false, `${heading} with ${JSON.stringify(body)}`);
+      assert.deepEqual(result.empty, [heading]);
+    }
+  }
+});
+test('accepts semantic content following Markdown structural markers', () => {
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+  for (const body of ['- send message', '- [ ] confirm approval', '> restore backup', '1. APPROVE ACTION']) {
+    const packet = valid.replace(/(## Proposed Action)\n[^#]+/, `$1\n${body}\n`);
+    assert.equal(checkPacketText(packet).ok, true, body);
+  }
+});
 test('check CLI rejects heading-only packets with machine-reviewable output', () => {
   const directory = mkdtempSync(join(tmpdir(), 'action-approval-empty-'));
   const packet = join(directory, 'packet.md');
@@ -176,6 +197,16 @@ test('check CLI rejects heading-only packets with machine-reviewable output', ()
   const output = JSON.parse(result.stdout);
   assert.equal(output.ok, false);
   assert.deepEqual(output.missing, []);
+  assert.deepEqual(output.empty, ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
+});
+test('check CLI rejects marker-only packet bodies with machine-reviewable output', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-markers-'));
+  const packet = join(directory, 'packet.md');
+  writeFileSync(packet, '# Action Approval Packet\n## Proposed Action\n-\n## Side Effects\n- [ ]\n## Rollback\n>\n## Required Approval Phrase\n1.\n');
+  const result = spawnSync('node', ['dist/cli.js', 'check', packet], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.equal(result.stderr, '');
+  const output = JSON.parse(result.stdout);
   assert.deepEqual(output.empty, ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
 });
 test('check CLI rejects reordered packets with machine-reviewable output', () => {
