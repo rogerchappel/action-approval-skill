@@ -33,6 +33,8 @@ Packet checks require the packet title to be the first content, followed by the
 expected standalone Markdown sections in generated order. Proposed Action,
 Side Effects, Rollback, and Required Approval Phrase must contain semantic
 content; blank, whitespace-only, and HTML-comment-only bodies are rejected.
+Bare Markdown structure such as list, task-list, quote, fence, and thematic-break
+markers is also non-semantic; text following those markers is accepted.
 When rendering Markdown, embedded line breaks in proposal text and list values
 are normalized to spaces. A heading marker at the start of a rendered value is
 escaped, and whitespace-only rollback or approval values use the same defaults
