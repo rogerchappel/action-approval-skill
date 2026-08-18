@@ -32,7 +32,8 @@ action-approval-skill check approval-packet.md
 
 `check` accepts one coherent generated packet: the packet title must be first,
 required sections must be unique and in generated order, and their bodies must
-contain content other than Markdown whitespace or HTML comments. Invalid
+contain semantic text rather than only Markdown whitespace, HTML comments, or
+bare list, task-list, quote, fence, or thematic-break markers. Invalid
 packets produce JSON diagnostics and a nonzero status.
 
 ## Validation

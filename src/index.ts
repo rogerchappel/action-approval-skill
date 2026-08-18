@@ -99,6 +99,14 @@ export function checkPacketText(text: string){
   const requiredSections = ['## Proposed Action','## Side Effects','## Rollback','## Required Approval Phrase'];
   const withoutComments = text.replace(/<!--[\s\S]*?-->/g, comment => comment.replace(/[^\r\n]/g, ''));
   const lines = withoutComments.split(/\r?\n/);
+  const hasSemanticContent = (line: string) => {
+    let content = line.trim();
+    content = content.replace(/^(?:>\s*)+/, '').trim();
+    if (/^(?:`{3,}|~{3,}|[-*_](?:\s*[-*_]){2,})$/.test(content)) return false;
+    content = content.replace(/^(?:(?:[-+*]|\d+[.)])\s*)/, '').trim();
+    content = content.replace(/^\[(?: |x|X)\]\s*/, '').trim();
+    return content.length > 0;
+  };
   const headings = new Map<string, number[]>();
   lines.forEach((line, index) => {
     const heading = line.trim();
@@ -122,7 +130,7 @@ export function checkPacketText(text: string){
     if (start === undefined) return false;
     const nextHeading = lines.findIndex((line, index) => index > start && /^#{1,6}\s+\S/.test(line.trim()));
     const end = nextHeading === -1 ? lines.length : nextHeading;
-    return !lines.slice(start + 1, end).some(line => line.trim().length > 0);
+    return !lines.slice(start + 1, end).some(hasSemanticContent);
   });
   return {
     ok: missing.length === 0 && duplicates.length === 0 && title.position === 'valid' && outOfOrder.length === 0 && empty.length === 0,
