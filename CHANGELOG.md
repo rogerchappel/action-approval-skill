@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Ignore example headings inside fenced code when validating packet structure.
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Reject invalid proposal shapes and require standalone packet section headings.
 - Reject unstructured or incomplete proposals that lack a non-empty action or summary.

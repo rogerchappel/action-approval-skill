@@ -99,6 +99,17 @@ export function checkPacketText(text: string){
   const requiredSections = ['## Proposed Action','## Side Effects','## Rollback','## Required Approval Phrase'];
   const withoutComments = text.replace(/<!--[\s\S]*?-->/g, comment => comment.replace(/[^\r\n]/g, ''));
   const lines = withoutComments.split(/\r?\n/);
+  let fence: { marker: '`' | '~'; length: number } | undefined;
+  const structuralLines = lines.map(line => {
+    const candidate = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (!fence) {
+      if (!candidate || (candidate[1][0] === '`' && candidate[2].includes('`'))) return line;
+      fence = { marker: candidate[1][0] as '`' | '~', length: candidate[1].length };
+      return '';
+    }
+    if (candidate && candidate[1][0] === fence.marker && candidate[1].length >= fence.length && candidate[2].trim() === '') fence = undefined;
+    return '';
+  });
   const hasSemanticContent = (line: string) => {
     let content = line.trim();
     content = content.replace(/^(?:>\s*)+/, '').trim();
@@ -108,7 +119,7 @@ export function checkPacketText(text: string){
     return content.length > 0;
   };
   const headings = new Map<string, number[]>();
-  lines.forEach((line, index) => {
+  structuralLines.forEach((line, index) => {
     const heading = line.trim();
     if (/^#{1,6}\s+\S/.test(heading)) headings.set(heading, [...(headings.get(heading) ?? []), index]);
   });
@@ -128,9 +139,9 @@ export function checkPacketText(text: string){
   const empty = requiredSections.filter(heading => {
     const start = headings.get(heading)?.[0];
     if (start === undefined) return false;
-    const nextHeading = lines.findIndex((line, index) => index > start && /^#{1,6}\s+\S/.test(line.trim()));
+    const nextHeading = structuralLines.findIndex((line, index) => index > start && /^#{1,6}\s+\S/.test(line.trim()));
     const end = nextHeading === -1 ? lines.length : nextHeading;
-    return !lines.slice(start + 1, end).some(hasSemanticContent);
+    return !structuralLines.slice(start + 1, end).some(hasSemanticContent);
   });
   return {
     ok: missing.length === 0 && duplicates.length === 0 && title.position === 'valid' && outOfOrder.length === 0 && empty.length === 0,
