@@ -72,6 +72,28 @@ test('requires a non-empty action or summary in proposals', () => {
   assert.equal(parseProposal('{"summary":"document the release"}').summary, 'document the release');
 });
 test('checks generated packet structure', () => { const md = packetToMarkdown(createApprovalPacket({ action: 'document only' })); assert.equal(checkPacketText(md).ok, true); });
+test('ignores packet headings inside backtick and tilde fenced code blocks', () => {
+  const required = ['# Action Approval Packet', '## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase'];
+  for (const fence of ['```markdown', '~~~~ markdown']) {
+    const result = checkPacketText([fence, ...required.flatMap(heading => [heading, 'example']), fence.startsWith('`') ? '```' : '~~~~'].join('\n'));
+    assert.equal(result.ok, false, fence);
+    assert.deepEqual(result.missing, required, fence);
+    assert.equal(result.title.position, 'missing', fence);
+  }
+});
+test('uses only unfenced headings while preserving headings after fence closure', () => {
+  const valid = packetToMarkdown(createApprovalPacket({ action: 'document only' }));
+  const fencedExamples = ['```markdown', '## Rollback', 'example', '```', '~~~', '## Side Effects', 'example', '~~~'].join('\n');
+  const result = checkPacketText(valid.replace('## Side Effects', `${fencedExamples}\n## Side Effects`));
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.duplicates, []);
+  assert.deepEqual(result.outOfOrder, []);
+
+  const unclosed = checkPacketText(valid.replace('## Side Effects', '```markdown\n## Side Effects'));
+  assert.equal(unclosed.ok, false);
+  assert.deepEqual(unclosed.missing, ['## Side Effects', '## Rollback', '## Required Approval Phrase']);
+});
 test('keeps multiline scalar proposal fields inside one packet structure', () => {
   const packet = createApprovalPacket({
     title: 'Release update\n# Action Approval Packet',
@@ -198,6 +220,15 @@ test('check CLI rejects heading-only packets with machine-reviewable output', ()
   assert.equal(output.ok, false);
   assert.deepEqual(output.missing, []);
   assert.deepEqual(output.empty, ['## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
+});
+test('check CLI rejects packets whose required structure exists only inside fenced examples', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-fenced-'));
+  const packet = join(directory, 'packet.md');
+  writeFileSync(packet, '```markdown\n# Action Approval Packet\n## Proposed Action\nsend\n## Side Effects\nmessage\n## Rollback\nretract\n## Required Approval Phrase\nAPPROVE ACTION\n```\n');
+  const result = spawnSync('node', ['dist/cli.js', 'check', packet], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  const output = JSON.parse(result.stdout);
+  assert.deepEqual(output.missing, ['# Action Approval Packet', '## Proposed Action', '## Side Effects', '## Rollback', '## Required Approval Phrase']);
 });
 test('check CLI rejects marker-only packet bodies with machine-reviewable output', () => {
   const directory = mkdtempSync(join(tmpdir(), 'action-approval-markers-'));
