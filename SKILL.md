@@ -34,7 +34,8 @@ action-approval-skill check approval-packet.md
 required sections must be unique and in generated order, and their bodies must
 contain semantic text rather than only Markdown whitespace, HTML comments, or
 bare list, task-list, quote, fence, or thematic-break markers. Invalid
-packets produce JSON diagnostics and a nonzero status.
+packets produce JSON diagnostics and a nonzero status. Headings and content
+inside backtick or tilde fenced code blocks are examples, not packet structure.
 
 ## Validation
 

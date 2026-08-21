@@ -35,6 +35,8 @@ Side Effects, Rollback, and Required Approval Phrase must contain semantic
 content; blank, whitespace-only, and HTML-comment-only bodies are rejected.
 Bare Markdown structure such as list, task-list, quote, fence, and thematic-break
 markers is also non-semantic; text following those markers is accepted.
+ATX-looking headings inside backtick or tilde fenced code blocks are ignored;
+only unfenced headings define packet structure and section boundaries.
 When rendering Markdown, embedded line breaks in proposal text and list values
 are normalized to spaces. A heading marker at the start of a rendered value is
 escaped, and whitespace-only rollback or approval values use the same defaults
