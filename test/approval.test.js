@@ -56,6 +56,15 @@ test('preserves explicitly supplied classification fields, including empty array
   assert.equal(packet.risk, 'low');
 });
 test('parses markdown proposal fields', () => { const parsed = parseProposal('Title: Demo\nAction: create GitHub issue\nEvidence: log.txt'); assert.equal(parsed.title, 'Demo'); assert.deepEqual(parsed.evidence, ['log.txt']); });
+test('preserves and normalizes Actor consistently across Markdown and JSON proposals', () => {
+  const markdown = parseProposal('Action: review item\n- Actor:   GitHub App   ');
+  const json = parseProposal('{"action":"review item","actor":"GitHub App"}');
+
+  assert.equal(markdown.actor, 'GitHub App');
+  assert.equal(markdown.actor, json.actor);
+  assert.equal(createApprovalPacket(markdown).system, 'github');
+  assert.equal(createApprovalPacket(json).system, 'github');
+});
 test('requires a non-empty action or summary in proposals', () => {
   for (const proposal of [
     'this is not a structured proposal',
@@ -274,6 +283,19 @@ test('plan reports invalid proposals without producing a packet', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /invalid proposal/i);
   assert.equal(result.stdout, '');
+});
+test('plan gives Markdown and JSON Actor fields identical classification behavior', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-actor-'));
+  const markdownPath = join(directory, 'proposal.md');
+  const jsonPath = join(directory, 'proposal.json');
+  writeFileSync(markdownPath, 'Action: review item\nActor:   GitHub App   \n');
+  writeFileSync(jsonPath, JSON.stringify({ action: 'review item', actor: 'GitHub App' }));
+
+  const outputs = [markdownPath, jsonPath].map(proposal => JSON.parse(
+    execFileSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' }),
+  ));
+  assert.deepEqual(outputs.map(packet => packet.system), ['github', 'github']);
+  assert.deepEqual(outputs[0], outputs[1]);
 });
 test('plan rejects unstructured Markdown without producing a packet', () => {
   const result = spawnSync('node', ['dist/cli.js', 'plan', 'fixtures/unstructured.md', '--format', 'json'], { encoding: 'utf8' });
