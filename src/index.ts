@@ -45,6 +45,7 @@ export function parseProposal(text: string): ProposalInput {
     if (key === 'title') out.title = val;
     if (key === 'action') out.action = val;
     if (key === 'system') out.system = val;
+    if (key === 'actor') out.actor = val;
     if (key === 'target') out.target = val;
     if (key === 'summary') out.summary = val;
     if (key === 'rollback') out.rollback = val;

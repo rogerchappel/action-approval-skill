@@ -27,8 +27,12 @@ JSON proposals must be objects. Text fields such as `action` and `rollback`
 must be strings; `sideEffects`, `sensitiveFields`, and `evidence` must be
 arrays of strings. Every JSON or Markdown proposal must provide a non-empty
 `action` or `summary`; other fields are optional. Markdown fields use
-`Field: value` lines, and prose without a recognized actionable field is
-rejected. Invalid or incomplete proposals exit nonzero and do not emit a packet.
+`Field: value` lines and recognize `title`, `action`, `system`, `actor`, `target`,
+`summary`, `sideEffects`, `sensitiveFields`, `evidence`, `rollback`, and
+`approval`. Scalar values are trimmed consistently, so an `Actor: GitHub App`
+line participates in system inference just like `"actor": "GitHub App"` in
+JSON. Prose without a recognized actionable field is rejected. Invalid or
+incomplete proposals exit nonzero and do not emit a packet.
 Packet checks require the packet title to be the first content, followed by the
 expected standalone Markdown sections in generated order. Proposed Action,
 Side Effects, Rollback, and Required Approval Phrase must contain semantic
