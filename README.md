@@ -31,7 +31,11 @@ arrays of strings. Every JSON or Markdown proposal must provide a non-empty
 `summary`, `sideEffects`, `sensitiveFields`, `evidence`, `rollback`, and
 `approval`. Scalar values are trimmed consistently, so an `Actor: GitHub App`
 line participates in system inference just like `"actor": "GitHub App"` in
-JSON. Prose without a recognized actionable field is rejected. Invalid or
+JSON. Blank scalar values are treated as omitted when packets are built: a
+blank `action` falls back to a meaningful `summary`, and blank `title`,
+`system`, `rollback`, or `approval` values use their documented defaults.
+Explicit empty `sideEffects` and `sensitiveFields` arrays remain authoritative.
+Prose without a recognized actionable field is rejected. Invalid or
 incomplete proposals exit nonzero and do not emit a packet.
 Packet checks require the packet title to be the first content, followed by the
 expected standalone Markdown sections in generated order. Proposed Action,

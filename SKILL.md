@@ -22,6 +22,9 @@ keywords as complete words or phrases; titles, evidence, rollback notes, and
 approval phrases are descriptive context and do not create inferred side
 effects or sensitive fields. Explicit `sideEffects` and `sensitiveFields`,
 including empty arrays, are authoritative.
+Blank scalar fields are treated as omitted. In particular, a blank `action`
+uses the non-empty `summary` for packet output and side-effect inference;
+blank title, system, rollback, and approval values use their normal defaults.
 
 ## Examples
 
