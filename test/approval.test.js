@@ -55,6 +55,25 @@ test('preserves explicitly supplied classification fields, including empty array
   assert.deepEqual(packet.sensitiveFields, []);
   assert.equal(packet.risk, 'low');
 });
+test('uses meaningful scalar fallbacks when optional values are blank', () => {
+  const packet = createApprovalPacket({
+    action: '   ',
+    summary: 'send a message to the launch channel',
+    title: ' ',
+    system: '\t',
+    rollback: '\n',
+    approval: '  ',
+  });
+
+  assert.equal(packet.action, 'send a message to the launch channel');
+  assert.equal(packet.title, 'send a message to the launch channel');
+  assert.equal(packet.system, 'external system');
+  assert.deepEqual(packet.sideEffects, ['send', 'message']);
+  assert.equal(packet.risk, 'high');
+  assert.equal(packet.requiresApproval, true);
+  assert.equal(packet.rollback, 'Not provided');
+  assert.equal(packet.approvalPhrase, 'APPROVE ACTION');
+});
 test('parses markdown proposal fields', () => { const parsed = parseProposal('Title: Demo\nAction: create GitHub issue\nEvidence: log.txt'); assert.equal(parsed.title, 'Demo'); assert.deepEqual(parsed.evidence, ['log.txt']); });
 test('preserves and normalizes Actor consistently across Markdown and JSON proposals', () => {
   const markdown = parseProposal('Action: review item\n- Actor:   GitHub App   ');
@@ -296,6 +315,28 @@ test('plan gives Markdown and JSON Actor fields identical classification behavio
   ));
   assert.deepEqual(outputs.map(packet => packet.system), ['github', 'github']);
   assert.deepEqual(outputs[0], outputs[1]);
+});
+test('plan uses a nonblank summary when the JSON action is blank', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-summary-'));
+  const proposal = join(directory, 'proposal.json');
+  writeFileSync(proposal, JSON.stringify({
+    action: '   ',
+    summary: 'send a message to the launch channel',
+    system: 'slack',
+  }));
+
+  const json = JSON.parse(execFileSync(
+    'node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' },
+  ));
+  const markdown = execFileSync(
+    'node', ['dist/cli.js', 'plan', proposal, '--format', 'markdown'], { encoding: 'utf8' },
+  );
+  assert.equal(json.action, 'send a message to the launch channel');
+  assert.equal(json.title, 'send a message to the launch channel');
+  assert.equal(json.requiresApproval, true);
+  assert.match(markdown, /- Title: send a message to the launch channel/);
+  assert.match(markdown, /## Proposed Action\nsend a message to the launch channel/);
+  assert.match(markdown, /- Requires approval: yes/);
 });
 test('plan rejects unstructured Markdown without producing a packet', () => {
   const result = spawnSync('node', ['dist/cli.js', 'plan', 'fixtures/unstructured.md', '--format', 'json'], { encoding: 'utf8' });
