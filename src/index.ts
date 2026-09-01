@@ -64,18 +64,21 @@ export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
     .join(' ')
     .toLowerCase();
   const system = nonBlank(input.system) ?? inferSystem(classificationText);
-  const sideEffects = input.sideEffects !== undefined ? input.sideEffects : inferSideEffects(action);
+  const sideEffects = input.sideEffects !== undefined ? normalizeList(input.sideEffects) : inferSideEffects(action);
   const sensitiveFields = input.sensitiveFields !== undefined
-    ? input.sensitiveFields
+    ? normalizeList(input.sensitiveFields)
     : sensitive.filter(keyword => containsKeyword(classificationText, keyword));
+  const evidence = normalizeList(input.evidence ?? []);
+  const rollback = nonBlank(input.rollback);
   const risk: ApprovalRisk = sideEffects.some(effect => highRisk.some(keyword => containsKeyword(effect, keyword))) || sensitiveFields.length > 0 ? 'high' : sideEffects.length ? 'medium' : 'low';
   const warnings: string[] = [];
-  if (!input.rollback) warnings.push('Rollback notes missing.');
-  if (!input.evidence?.length) warnings.push('Evidence links missing.');
+  if (!rollback) warnings.push('Rollback notes missing.');
+  if (!evidence.length) warnings.push('Evidence links missing.');
   if (sensitiveFields.length) warnings.push('Sensitive data detected; redact before sharing broadly.');
-  return { title: nonBlank(input.title) ?? action, action, system, risk, requiresApproval: risk !== 'low' || sideEffects.length > 0, sideEffects, sensitiveFields, evidence: input.evidence ?? [], rollback: nonBlank(input.rollback) ?? 'Not provided', checklist: ['Dry-run packet reviewed','Target system and recipient confirmed','Sensitive fields redacted or justified','Rollback owner named','Explicit approver phrase captured'], approvalPhrase: nonBlank(input.approval) ?? 'APPROVE ACTION', warnings };
+  return { title: nonBlank(input.title) ?? action, action, system, risk, requiresApproval: risk !== 'low' || sideEffects.length > 0, sideEffects, sensitiveFields, evidence, rollback: rollback ?? 'Not provided', checklist: ['Dry-run packet reviewed','Target system and recipient confirmed','Sensitive fields redacted or justified','Rollback owner named','Explicit approver phrase captured'], approvalPhrase: nonBlank(input.approval) ?? 'APPROVE ACTION', warnings };
 }
 function nonBlank(value: string | undefined) { const normalized = value?.trim(); return normalized || undefined; }
+function normalizeList(values: string[]) { return values.map(value => value.trim()).filter(Boolean); }
 function inferSystem(text:string){ if(text.includes('slack')) return 'slack'; if(text.includes('github')) return 'github'; if(text.includes('crm')||text.includes('salesforce')) return 'crm'; return 'external system'; }
 function containsKeyword(text: string, keyword: string) {
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
