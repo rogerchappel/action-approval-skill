@@ -34,7 +34,12 @@ line participates in system inference just like `"actor": "GitHub App"` in
 JSON. Blank scalar values are treated as omitted when packets are built: a
 blank `action` falls back to a meaningful `summary`, and blank `title`,
 `system`, `rollback`, or `approval` values use their documented defaults.
-Explicit empty `sideEffects` and `sensitiveFields` arrays remain authoritative.
+String-array entries are trimmed and whitespace-only entries are discarded for
+both JSON and Markdown proposals. An effectively empty `sideEffects` or
+`sensitiveFields` array remains authoritative and does not add risk or
+sensitive-data warnings; effectively empty `evidence` and `rollback` values
+produce the same missing-value warnings and rendered fallbacks as omitted
+values.
 Prose without a recognized actionable field is rejected. Invalid or
 incomplete proposals exit nonzero and do not emit a packet.
 Packet checks require the packet title to be the first content, followed by the
