@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Normalize whitespace-only proposal list entries before risk classification,
+  warning generation, and packet rendering.
 - Ignore example headings inside fenced code when validating packet structure.
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Reject invalid proposal shapes and require standalone packet section headings.

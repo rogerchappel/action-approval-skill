@@ -55,6 +55,37 @@ test('preserves explicitly supplied classification fields, including empty array
   assert.deepEqual(packet.sensitiveFields, []);
   assert.equal(packet.risk, 'low');
 });
+test('normalizes blank and mixed string-array entries before classification', () => {
+  const blank = createApprovalPacket({
+    action: 'document the release',
+    sideEffects: [' ', '\t'],
+    sensitiveFields: ['\n'],
+    evidence: ['   '],
+    rollback: '  ',
+  });
+
+  assert.deepEqual(blank.sideEffects, []);
+  assert.deepEqual(blank.sensitiveFields, []);
+  assert.deepEqual(blank.evidence, []);
+  assert.equal(blank.risk, 'low');
+  assert.equal(blank.requiresApproval, false);
+  assert.equal(blank.rollback, 'Not provided');
+  assert.deepEqual(blank.warnings, ['Rollback notes missing.', 'Evidence links missing.']);
+
+  const mixed = createApprovalPacket({
+    action: 'document the release',
+    sideEffects: [' ', ' external notification ', '\t'],
+    sensitiveFields: [' ', ' customer email '],
+    evidence: [' ', ' npm test ', '\n'],
+    rollback: ' revert the commit ',
+  });
+  assert.deepEqual(mixed.sideEffects, ['external notification']);
+  assert.deepEqual(mixed.sensitiveFields, ['customer email']);
+  assert.deepEqual(mixed.evidence, ['npm test']);
+  assert.equal(mixed.rollback, 'revert the commit');
+  assert.equal(mixed.risk, 'high');
+  assert.deepEqual(mixed.warnings, ['Sensitive data detected; redact before sharing broadly.']);
+});
 test('uses meaningful scalar fallbacks when optional values are blank', () => {
   const packet = createApprovalPacket({
     action: '   ',
@@ -315,6 +346,29 @@ test('plan gives Markdown and JSON Actor fields identical classification behavio
   ));
   assert.deepEqual(outputs.map(packet => packet.system), ['github', 'github']);
   assert.deepEqual(outputs[0], outputs[1]);
+});
+test('plan gives Markdown and JSON list whitespace identical packet semantics', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-whitespace-'));
+  const markdownPath = join(directory, 'proposal.md');
+  const jsonPath = join(directory, 'proposal.json');
+  writeFileSync(markdownPath, 'Action: document the release\nSide Effects: , external notification, \nSensitive Fields: , customer email, \nEvidence: , npm test, \nRollback:   \n');
+  writeFileSync(jsonPath, JSON.stringify({
+    action: 'document the release',
+    sideEffects: [' ', 'external notification', ''],
+    sensitiveFields: [' ', 'customer email'],
+    evidence: ['', 'npm test', ' '],
+    rollback: '   ',
+  }));
+
+  const outputs = [markdownPath, jsonPath].map(proposal => JSON.parse(
+    execFileSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' }),
+  ));
+  assert.deepEqual(outputs[0], outputs[1]);
+  assert.deepEqual(outputs[0].sideEffects, ['external notification']);
+  assert.deepEqual(outputs[0].sensitiveFields, ['customer email']);
+  assert.deepEqual(outputs[0].evidence, ['npm test']);
+  assert.equal(outputs[0].rollback, 'Not provided');
+  assert.ok(outputs[0].warnings.includes('Rollback notes missing.'));
 });
 test('plan uses a nonblank summary when the JSON action is blank', () => {
   const directory = mkdtempSync(join(tmpdir(), 'action-approval-summary-'));
