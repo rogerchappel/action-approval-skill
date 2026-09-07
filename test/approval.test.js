@@ -26,12 +26,23 @@ test('classifies only semantically relevant proposal fields and complete action 
     action: 'document the release notes',
     evidence: ['postmortem.md', 'secret-scan.txt'],
     rollback: 'revert the documentation push',
+    approval: 'approve sending the customer message',
   });
 
   assert.deepEqual(documentation.sideEffects, []);
   assert.deepEqual(documentation.sensitiveFields, []);
   assert.equal(documentation.risk, 'low');
   assert.equal(documentation.requiresApproval, false);
+
+  for (const field of ['summary', 'system', 'actor', 'target']) {
+    const packet = createApprovalPacket({
+      action: 'review the request',
+      [field]: 'send a message to users',
+    });
+    assert.deepEqual(packet.sideEffects, ['send', 'message'], field);
+    assert.equal(packet.risk, 'high', field);
+    assert.equal(packet.requiresApproval, true, field);
+  }
 
   for (const keyword of ['send', 'post', 'push', 'delete', 'invite', 'charge', 'email', 'message']) {
     const packet = createApprovalPacket({ action: `${keyword} the requested update` });
