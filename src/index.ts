@@ -64,7 +64,7 @@ export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
     .join(' ')
     .toLowerCase();
   const system = nonBlank(input.system) ?? inferSystem(classificationText);
-  const sideEffects = input.sideEffects !== undefined ? normalizeList(input.sideEffects) : inferSideEffects(action);
+  const sideEffects = input.sideEffects !== undefined ? normalizeList(input.sideEffects) : inferSideEffects(classificationText);
   const sensitiveFields = input.sensitiveFields !== undefined
     ? normalizeList(input.sensitiveFields)
     : sensitive.filter(keyword => containsKeyword(classificationText, keyword));

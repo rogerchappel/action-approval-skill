@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Infer side effects from action, summary, system, actor, and target fields when
+  explicit side effects are omitted.
 - Normalize whitespace-only proposal list entries before risk classification,
   warning generation, and packet rendering.
 - Ignore example headings inside fenced code when validating packet structure.
