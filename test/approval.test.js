@@ -279,6 +279,57 @@ test('accepts semantic content following Markdown structural markers', () => {
     assert.equal(checkPacketText(packet).ok, true, body);
   }
 });
+test('plan builds a high-risk Slack packet from a digit-prefixed Markdown proposal', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-digit-'));
+  const proposal = join(directory, 'proposal.md');
+  writeFileSync(proposal, '2026 Q3 recap:\nAction: post release notes to Slack\nRollback: delete message\n');
+  const markdown = spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'markdown'], { encoding: 'utf8' });
+  assert.equal(markdown.status, 0);
+  assert.match(markdown.stdout, /## Proposed Action\npost release notes to Slack/);
+  assert.match(markdown.stdout, /## Rollback\ndelete message/);
+  assert.equal(markdown.stderr, '');
+  const json = JSON.parse(spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' }).stdout);
+  assert.equal(json.system, 'slack');
+  assert.equal(json.risk, 'high');
+  assert.equal(json.requiresApproval, true);
+});
+test('plan parses bracket- and brace-prefixed Markdown proposals with fields', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-prefix-'));
+  const cases = [
+    ['[recap] summary: weekly digest\nAction: post release notes to Slack\n', 'post release notes to Slack'],
+    ['{TODO}\nAction: document the release\nRollback: revert the commit\n', 'document the release'],
+  ];
+  for (const [index, [text, action]] of cases.entries()) {
+    const proposal = join(directory, `proposal-${index}.md`);
+    writeFileSync(proposal, text);
+    const result = spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, text);
+    assert.equal(JSON.parse(result.stdout).action, action, text);
+    assert.equal(result.stderr, '', text);
+  }
+});
+test('plan parses literal-prefixed Markdown proposals with fields', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-literal-'));
+  for (const literal of ['null', 'true', 'false']) {
+    const proposal = join(directory, `proposal-${literal}.md`);
+    writeFileSync(proposal, `${literal} report\nAction: document the release\n`);
+    const result = spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, literal);
+    assert.equal(JSON.parse(result.stdout).action, 'document the release', literal);
+  }
+});
+test('plan rejects JSON-like prefixes without fields using concise diagnostics', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'action-approval-jsonlike-'));
+  for (const [index, text] of ['[1, 2, 3]', '{broken', 'null', 'true', 'false', '2026', '-1'].entries()) {
+    const proposal = join(directory, `proposal-${index}.md`);
+    writeFileSync(proposal, `${text}\n`);
+    const result = spawnSync('node', ['dist/cli.js', 'plan', proposal, '--format', 'json'], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0, text);
+    assert.match(result.stderr, /^Error: invalid proposal: /, text);
+    assert.doesNotMatch(result.stderr, /JSON at position|is not valid JSON|Unexpected token/, text);
+    assert.equal(result.stdout, '', text);
+  }
+});
 test('check CLI rejects heading-only packets with machine-reviewable output', () => {
   const directory = mkdtempSync(join(tmpdir(), 'action-approval-empty-'));
   const packet = join(directory, 'packet.md');
