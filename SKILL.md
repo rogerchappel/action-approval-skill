@@ -4,7 +4,7 @@ Use this skill when an agent proposes an external side effect such as sending a 
 
 ## Inputs
 
-- JSON object or `Field: value` Markdown proposal with a non-empty action or summary. System, side effects, sensitive fields, evidence, rollback, and approval phrase are optional.
+- JSON object or `Field: value` Markdown proposal with a non-empty action or summary. System, side effects, sensitive fields, evidence, rollback, and approval phrase are optional. Detection is ordered: leading `{` is strict JSON (malformed JSON falls back to Markdown parsing); proposals beginning with `[`, `{`, a digit, or the literals `null`, `true`, or `false` are Markdown whenever they contain `Field: value` lines; JSON-shaped text without Markdown fields is rejected with a concise `invalid proposal:` diagnostic and raw parser errors never surface.
 - Unstructured prose and proposals containing only optional fields are invalid and must not produce a packet.
 - Local files only. Do not fetch credentials or call external APIs.
 
