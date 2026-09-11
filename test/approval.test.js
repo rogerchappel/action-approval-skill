@@ -325,6 +325,34 @@ test('rejects malformed proposal shapes and field types', () => {
     assert.throws(() => parseProposal(proposal), /proposal/i);
   }
 });
+test('parses Markdown proposals beginning with JSON-like prefixes as fields', () => {
+  const action = 'post release notes to Slack';
+  const firstLines = [
+    '2026 Q3 recap:',
+    '[recap] summary: weekly digest',
+    '{TODO}',
+    'null report',
+    'true story',
+    'false positive report',
+  ];
+  for (const first of firstLines) {
+    const parsed = parseProposal([first, `Action: ${action}`, 'Rollback: delete message'].join('\n'));
+    assert.equal(parsed.action, action, first);
+    assert.equal(parsed.rollback, 'delete message', first);
+  }
+});
+test('rejects JSON-like proposals without Markdown fields using concise diagnostics', () => {
+  for (const proposal of ['null', 'true', 'false', '[1, 2, 3]', '{broken', '2026', '-1']) {
+    let message = '';
+    try {
+      parseProposal(proposal);
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    assert.match(message, /^invalid proposal: /, proposal);
+    assert.doesNotMatch(message, /JSON at position|is not valid JSON|Unexpected token/, proposal);
+  }
+});
 test('requires standalone packet headings', () => {
   const forged = [
     '# Action Approval Packet',
