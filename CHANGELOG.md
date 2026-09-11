@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Route Markdown proposals beginning with JSON-like prefixes (`[`, `{`, digits,
+  `null`/`true`/`false`) through the `Field: value` parser and keep
+  `invalid proposal:` diagnostics concise so raw JSON.parse errors never
+  surface to users.
 - Infer side effects from action, summary, system, actor, and target fields when
   explicit side effects are omitted.
 - Normalize whitespace-only proposal list entries before risk classification,
