@@ -30,11 +30,19 @@ function validateProposal(value: unknown): ProposalInput {
   return proposal as ProposalInput;
 }
 
+const jsonShaped = /^([{[]|null|true|false|-?\d)/;
+
 export function parseProposal(text: string): ProposalInput {
   const trimmed = text.trim();
   if (!trimmed) throw new Error('proposal is empty');
-  if (/^[{[]/.test(trimmed) || /^(null|true|false|-?\d)/.test(trimmed)) {
-    return validateProposal(JSON.parse(trimmed) as unknown);
+  if (trimmed.startsWith('{')) {
+    try {
+      return validateProposal(JSON.parse(trimmed) as unknown);
+    } catch (error) {
+      // Malformed JSON falls through to Markdown field parsing; validation
+      // failures for parsed JSON objects are still reported concisely.
+      if (!(error instanceof SyntaxError)) throw error;
+    }
   }
   const out: ProposalInput = {};
   for (const line of trimmed.split(/\r?\n/)) {
@@ -54,7 +62,14 @@ export function parseProposal(text: string): ProposalInput {
     if (key === 'sensitivefields') out.sensitiveFields = val.split(',').map(s => s.trim()).filter(Boolean);
     if (key === 'evidence') out.evidence = val.split(',').map(s => s.trim()).filter(Boolean);
   }
-  return validateProposal(out);
+  try {
+    return validateProposal(out);
+  } catch (error) {
+    if (jsonShaped.test(trimmed)) {
+      throw new Error('invalid proposal: expected a JSON object or structured Markdown fields');
+    }
+    throw error;
+  }
 }
 
 export function createApprovalPacket(input: ProposalInput): ApprovalPacket {
