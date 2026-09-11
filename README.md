@@ -23,6 +23,16 @@ node dist/cli.js plan fixtures/repository-push.json --format json
 arguments are rejected. File and proposal errors are printed as concise
 diagnostics to standard error, with no partial packet output.
 
+Proposal format detection is ordered. A proposal beginning with `{` is first
+parsed as a strict JSON object; malformed JSON falls through to the Markdown
+parser. Otherwise - including proposals beginning with `[`, `{`, a digit, or
+the literals `null`, `true`, or `false` - `Field: value` Markdown parsing is
+attempted, and any proposal with valid fields is parsed as Markdown regardless
+of its first characters. JSON-shaped text without Markdown fields (for example
+`null`, `[1, 2, 3]`, or `2026`) is rejected with the concise
+`invalid proposal: expected a JSON object or structured Markdown fields`
+diagnostic, and raw parser errors are never shown to users.
+
 JSON proposals must be objects. Text fields such as `action` and `rollback`
 must be strings; `sideEffects`, `sensitiveFields`, and `evidence` must be
 arrays of strings. Every JSON or Markdown proposal must provide a non-empty
