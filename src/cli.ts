@@ -9,7 +9,7 @@ const fail = (message: string, status = 2): never => {
 };
 
 if ((argv[0] === '--help' || argv[0] === '-h') && argv.length === 1) { console.log(usage); process.exit(0); }
-if (argv[0] === '--version' && argv.length === 1) { const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')); console.log(pkg.version); process.exit(0); }
+if (argv[0] === '--version' && argv.length === 1) { const pkg = JSON.parse(readFileSync('./package.json', 'utf8')); console.log(pkg.version); process.exit(0); }
 
 const [cmd, file, ...args] = argv;
 if (!cmd || !['plan', 'check'].includes(cmd)) fail(usage);
